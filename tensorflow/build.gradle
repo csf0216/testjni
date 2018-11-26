@@ -16,6 +16,7 @@ task makeDex (type:Exec) {
 task makeApk (type:Exec) {
     workingDir  project.buildDir.name + '/libs'
     commandLine 'jar', 'cvf', 'tensor1.apk', 'classes.dex'
+//    commandLine 'jar', 'cvf', 'tensor.apk', 'classes.dex', 'assets/'
 }
 
 task dowmloadApk (type:Exec) {
