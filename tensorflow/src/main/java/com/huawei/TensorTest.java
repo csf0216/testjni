@@ -5,10 +5,13 @@ import android.graphics.Matrix;
 import android.os.Debug;
 import android.os.Looper;
 
+import com.android.dex.Dex;
 import com.huawei.utils.Classifier;
+import com.huawei.utils.DexUtils;
 import com.huawei.utils.TensorFlowImageClassifier;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -16,6 +19,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 import dalvik.system.BaseDexClassLoader;
+import dalvik.system.DexFile;
 import dalvik.system.PathClassLoader;
 
 public class TensorTest {
@@ -27,14 +31,28 @@ public class TensorTest {
     private static final String MODEL_FILE = "assets/model/tensorflow_inception_graph.pb";
     private static final String LABEL_FILE = "assets/model/imagenet_comp_graph_label_strings.txt";
     public static void main(String[] args) {
-        PathClassLoader pathClassLoader = (PathClassLoader) Classifier.class.getClassLoader();
-        Object pathList = makePathList(pathClassLoader, "/sdcard/opengl/bin/tensor.apk", "/data/app/tensor/lib/armeabi-v7a");
-        setPathList(pathClassLoader, pathList);
-        Thread.currentThread().setContextClassLoader(pathClassLoader);
         setProcessName("test");
         if (args.length == 1) {
             Debug.waitForDebugger();
         }
+        List<File> apks = DexUtils.getApks("/sdcard/tensor/");
+        if (apks == null || apks.size() == 0) {
+            return;
+        }
+        PathClassLoader pathClassLoader = (PathClassLoader) Classifier.class.getClassLoader();
+        Object pathList = makePathList(pathClassLoader, apks.get(0).getAbsolutePath(), "/data/app/tensor/lib/armeabi-v7a");
+        for (int i = 1; i < apks.size(); i++) {
+            try {
+                Object[] eles = DexUtils.getDexElements(pathList);
+                DexFile dexFile = DexFile.loadDex(apks.get(i).getAbsolutePath(), null, 0);
+                Object ele = DexUtils.makeDexElement(dexFile);
+                Object o = DexUtils.combineArray(eles, ele);
+                DexUtils.setDexElements(pathList, o);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        setPathList(pathClassLoader, pathList);
         Looper.prepareMainLooper();
         Classifier classifier = TensorFlowImageClassifier.create(MODEL_FILE, LABEL_FILE, INPUT_SIZE, IMAGE_MEAN, IMAGE_STD, INPUT_NAME, OUTPUT_NAME);
         String fileName = getPhotoCacheFolder()+File.pathSeparator+"TF_" + System.currentTimeMillis() + ".jpg";
@@ -53,7 +71,8 @@ public class TensorTest {
         Matrix matrix = new Matrix();
         matrix.postScale(scaleWidth, scaleHeight);
         return Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true);
-    }
+    }csf119078
+
 
     public static String getPhotoCacheFolder() {
         return "/sdcard/opengl";

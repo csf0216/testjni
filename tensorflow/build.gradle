@@ -1,0 +1,31 @@
+apply plugin: 'java'
+
+dependencies {
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+    compile files('libs/classes.jar')
+    compile files('libs/android.jar')
+    compile 'org.tensorflow:tensorflow:1.6.0'
+    compile files('libs/core-libart.jar')
+}
+
+task makeDex (type:Exec) {
+    workingDir  project.buildDir.name + '/libs'
+    commandLine '/home/michael/android/sdk/build-tools/25.0.2/dx', '--dex', '--output=classes.dex', 'tensorflow.jar'
+}
+
+task makeApk (type:Exec) {
+    workingDir  project.buildDir.name + '/libs'
+    commandLine 'jar', 'cvf', 'tensor1.apk', 'classes.dex'
+}
+
+task dowmloadApk (type:Exec) {
+    workingDir  project.buildDir.name + '/libs'
+    commandLine 'adb', 'push', 'tensor1.apk', '/sdcard/tensor/'
+}
+
+makeDex.dependsOn(build)
+makeApk.dependsOn(makeDex)
+dowmloadApk.dependsOn(makeApk)
+
+sourceCompatibility = "1.7"
+targetCompatibility = "1.7"
