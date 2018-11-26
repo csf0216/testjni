@@ -71,7 +71,7 @@ public class TensorTest {
         Matrix matrix = new Matrix();
         matrix.postScale(scaleWidth, scaleHeight);
         return Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true);
-    }csf119078
+    }
 
 
     public static String getPhotoCacheFolder() {
